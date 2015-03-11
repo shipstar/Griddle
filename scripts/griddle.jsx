@@ -53,6 +53,7 @@ var Griddle = React.createClass({
             "customRowComponent": null,
             "customGridComponent": null,
             "customPagerComponent": {},
+            "customFilter": null,
             "enableToggleCustom":false,
             "noDataMessage":"There is no data to display.",
             "noDataClassName": "griddle-nodata",
@@ -111,18 +112,26 @@ var Griddle = React.createClass({
             filter: filter
         };
 
-        // Obtain the state results.
-       updatedState.filteredResults = _.filter(this.props.results,
-       function(item) {
-            var arr = _.values(item);
-            for(var i = 0; i < arr.length; i++){
-               if ((arr[i]||"").toString().toLowerCase().indexOf(filter.toLowerCase()) >= 0){
-                return true;
-               }
-            }
+        // Use a custom filter if present.
+        var filterFunc = null;
 
-            return false;
-        });
+        if (this.props.customFilter) {
+            filterFunc = _.partial(this.props.customFilter, filter)
+        } else {
+            filterFunc = function (item) {
+                var arr = _.values(item);
+                for (var i = 0; i < arr.length; i++) {
+                    if ((arr[i] || "").toString().toLowerCase().indexOf(filter.toLowerCase()) >= 0) {
+                        return true;
+                    }
+                }
+
+                return false;
+            };
+        };
+
+        // Obtain the state results.
+        updatedState.filteredResults = _.filter(this.props.results, filterFunc);
 
         // Update the max page.
         updatedState.maxPage = that.getMaxPage(updatedState.filteredResults);
